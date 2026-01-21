@@ -1,0 +1,29 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Regla para la colección de USUARIOS
+    match /users/{userId} {
+      // Cualquiera puede ver el perfil de un chero (para ver su reputación)
+      allow read: if true;
+      // Solo el dueño del perfil puede editar su propia información
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Regla para la colección de PRODUCTOS
+    match /products/{productId} {
+      // Cualquiera (registrado o no) puede ver los productos en venta
+      allow read: if true;
+      // Solo usuarios registrados pueden publicar productos
+      allow create: if request.auth != null;
+      // Solo el dueño del producto puede editarlo o borrarlo
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.sellerId;
+    }
+
+    // Regla para los CHATS (Privacidad total)
+    match /chats/{chatId} {
+      // Solo las dos personas que están chateando pueden leer o escribir en ese chat
+      allow read, write: if request.auth != null && (request.auth.uid in resource.data.participants);
+    }
+  }
+}
